@@ -1,71 +1,69 @@
-import turtle
-import pandas as pd
+import os
+import random
+from art import logo, vs
+from game_data import data
 
-# Configurar pantalla y mostrar imagen
-screen = turtle.Screen()
-screen.title("Mexico y sus estados")
-image = r"C:\Users\sergi_zr88xxb\Desktop\Python_Portfolio\Project 20- Detector de coordenadas\Mexico_sin_nombres.gif"
-screen.addshape(image)
-turtle.shape(image)
+def clear_screen():
+    """Clears the console screen."""
+    os.system("cls" if os.name == "nt" else "clear")
 
-# Desactivar animaciones para evitar movimientos visibles
-screen.tracer(0)
+def format_data(account):
+    """Takes the account data and returns the printable format."""
+    account_name = account["name"]
+    account_descr = account["description"]
+    account_country = account["country"]
+    return f"{account_name}, a {account_descr}, from {account_country}"
 
-# Lista para almacenar los estados y sus coordenadas
-estados_coordenadas = []
+def check_answer(user_guess, a_followers, b_followers):
+    """Take a user's guess and the follower counts and returns if they got it right."""
+    if a_followers > b_followers:
+        return user_guess == "a"
+    else:
+        return user_guess == "b"
 
-# Función para capturar clics en el mapa
-def get_mouse_click_coor(x, y):
-    # Si el clic está dentro del botón, no pedir estado
-    if -100 <= x <= 100 and -275 <= y <= -225:
-        guardar_coordenadas()
-        return
-    
-    estado = screen.textinput("Estado", "Ingresa el nombre del estado:")
-    if estado:
-        estados_coordenadas.append({"estado": estado, "x": x, "y": y})
-        print(f"Guardado: {estado} - Coordenadas: ({x}, {y})")
+def play_game():
+    """Runs the main game loop."""
+    print(logo)
+    score = 0
+    game_should_continue = True
+    account_b = random.choice(data)
 
-# Guardar la información en un archivo CSV con Pandas
-def guardar_coordenadas():
-    if estados_coordenadas:  # Solo guarda si hay datos
-        df = pd.DataFrame(estados_coordenadas)  # Convertir lista en DataFrame
-        df.to_csv("estados_coordenadas.csv", index=False, encoding="utf-8")  # Guardar CSV
-        print("Coordenadas guardadas en estados_coordenadas.csv")
-    screen.bye()  # Cierra la ventana de Turtle
+    while game_should_continue:
+        # Make account B become the new account A
+        account_a = account_b  
 
-# Función para dibujar un botón con texto
-def crear_boton(x, y, ancho, alto, texto):
-    boton = turtle.Turtle()
-    boton.penup()
-    boton.hideturtle()
-    boton.goto(x - ancho // 2, y - alto // 2)  # Mover a la esquina inferior izquierda
-    boton.pendown()
-    boton.fillcolor("lightgray")
-    boton.begin_fill()
-    for _ in range(2):  # Dibujar rectángulo
-        boton.forward(ancho)
-        boton.left(90)
-        boton.forward(alto)
-        boton.left(90)
-    boton.end_fill()
-    
-    # Escribir texto encima del botón
-    boton.penup()
-    boton.goto(x, y - 10)  # Ajuste fino para centrar el texto
-    boton.write(texto, align="center", font=("Arial", 10, "bold"))
+        # Pick a new account for B, making sure it's different from A
+        account_b = random.choice(data)
+        while account_b == account_a:
+            account_b = random.choice(data)
 
-# Crear botón en la parte inferior
-crear_boton(0, -250, 100, 50, "Cerrar y Guardar")
+        print(f"Compare A: {format_data(account_a)}.")
+        print(vs)
+        print(f"Against B: {format_data(account_b)}.")
 
-# Reactivar animaciones antes de mostrar cambios en pantalla
-screen.update()
+        guess = input("Who has more followers? Type 'A' or 'B': ").lower()
 
-# Usar un solo evento de clic para manejar mapa y botón
-turtle.onscreenclick(get_mouse_click_coor)
+        # Clear the screen for better user experience
+        clear_screen()
+        print(logo)
 
-# Vincular evento de teclado
-screen.onkey(guardar_coordenadas, "s")  # Presiona 's' para guardar y salir
-screen.listen()  # Asegura que detecte las teclas
+        # Get follower count of each account
+        a_follower_count = account_a["follower_count"]
+        b_follower_count = account_b["follower_count"]
 
-turtle.mainloop()
+        # Check if the user is correct
+        is_correct = check_answer(guess, a_follower_count, b_follower_count)
+
+        if is_correct:
+            score += 1
+            print(f"✅ You're right! Current score: {score}")
+        else:
+            print(f"❌ Sorry, that's wrong. Final score: {score}.")
+            game_should_continue = False
+
+while True:
+    play_game()
+    again = input("Do you want to play again? (y/n): ").lower()
+    if again != "y":
+        print("Thanks for playing! 👋")
+        break
